@@ -3,9 +3,10 @@
 # Exemplo - Redução de Dimensionalidade
 library(psych)
 library(OpenImageR)
+library(Matrix)
 
-foto = "C:/Users/u00378/Desktop/topicos_george_2023/lista2/imag1.jpg"
-#foto = "C:/Users/u00378/Desktop/topicos_george_2023/lista2/imag2.jpg"
+foto ="C:/Users/Igor/Desktop/topicos_george_2023/git_repo/lista2/imag1.jpg"
+#foto ="C:/Users/Igor/Desktop/topicos_george_2023/git_repo/lista2/imag2.jpg"
 img <- readImage(foto)
 dim(img)
 imageShow(img)
@@ -39,7 +40,9 @@ V5 <- as.matrix(V[,1:5])
 D5 <- diag(imgg.svd$d[1:5])
 img_gray5 <- U5 %*% D5 %*% t(V5)
 imageShow(img_gray5)
-((tr(D5)/tr(D))-1) * 100 
+((tr(D5)/tr(D))-1) * 100
+rankMatrix(img_gray5)[1]
+mean((img_gray-img_gray5)^2)
 
 U10 <- as.matrix(U[,1:10])
 V10 <- as.matrix(V[,1:10])
@@ -47,6 +50,8 @@ D10 <- diag(imgg.svd$d[1:10])
 img_gray10 <- U10 %*% D10 %*% t(V10)
 imageShow(img_gray10)
 ((tr(D10)/tr(D))-1) * 100
+rankMatrix(img_gray10)[1]
+mean((img_gray-img_gray10)^2)
 
 U20 <- as.matrix(U[,1:20])
 V20 <- as.matrix(V[,1:20])
@@ -54,6 +59,9 @@ D20 <- diag(imgg.svd$d[1:20])
 img_gray20 <- U20 %*% D20 %*% t(V20)
 imageShow(img_gray20)
 ((tr(D20)/tr(D))-1) * 100
+rankMatrix(img_gray20)[1]
+mean((img_gray-img_gray20)^2)
+
 
 U30 <- as.matrix(U[,1:30])
 V30 <- as.matrix(V[,1:30])
@@ -61,27 +69,36 @@ D30 <- diag(imgg.svd$d[1:30])
 img_gray30 <- U30 %*% D30 %*% t(V30)
 imageShow(img_gray30)
 ((tr(D30)/tr(D))-1) * 100
+rankMatrix(img_gray30)[1]
+mean((img_gray-img_gray30)^2)
 
 U40 <- as.matrix(U[,1:40])
 V40 <- as.matrix(V[,1:40])
 D40 <- diag(imgg.svd$d[1:40])
 img_gray40 <- U40 %*% D40 %*% t(V40)
 imageShow(img_gray40)
+title("teste")
 ((tr(D40)/tr(D))-1) * 100
+rankMatrix(img_gray40)[1]
+mean((img_gray-img_gray40)^2)
 
 U60 <- as.matrix(U[,1:60])
 V60 <- as.matrix(V[,1:60])
 D60 <- diag(imgg.svd$d[1:60])
 img_gray60 <- U60 %*% D60 %*% t(V60)
 imageShow(img_gray60)
-tr(D60)/tr(D) * 100 
+((tr(D60)/tr(D))-1 )* 100
+rankMatrix(img_gray60)[1]
+mean((img_gray-img_gray60)^2)
 
 U99 <- as.matrix(U[,1:99])
 V99 <- as.matrix(V[,1:99])
 D99 <- diag(imgg.svd$d[1:99])
 img_gray99 <- U99 %*% D99 %*% t(V99)
 imageShow(img_gray99)
-tr(D99)/tr(D) * 100
+((tr(D99)/tr(D))-1) * 100
 
 rankMatrix(img_gray)[1]
 rankMatrix(img_gray99)[1]
+
+rankMatrix(img_gray60)[1]
