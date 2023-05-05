@@ -26,8 +26,13 @@ worst = worst.sample(n=20, random_state=0)
 best['Country name'] = best.index
 worst['Country name'] = worst.index
 
-pd.concat([best, worst]).to_excel(f'{INPUT_DIR}/sample_whr.xlsx', index = False)
+full = pd.concat([best, worst]).to_excel(f'{INPUT_DIR}/sample_whr.xlsx', index = False) #dataset w/ full information
 
 
 print(best)
 print(worst)
+
+for col in df.columns[:-1]:
+    full.loc[df.sample(frac=0.03571428571428571).index, col] = np.nan
+
+full.to_excell(f'{INPUT_DIR}/missing_whr.xlsx', index = False) #dataset w/ 25% missing information
