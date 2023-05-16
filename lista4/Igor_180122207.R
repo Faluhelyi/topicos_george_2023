@@ -1,4 +1,4 @@
-setwd("C:/Users/Igor/Desktop/topicos_george_2023/lista4")
+setwd("C:/Users/Igor/Desktop/topicos_george_2023/git_repo/lista4")
 ########################################################
 ## Exercício 14 do Capítulo 3 de James et al. (2021). ##
 ########################################################
@@ -14,7 +14,7 @@ y = 2+2*x1+0.3*x2+rnorm(100)
 #$\beta_0=2$, $\beta_1=2$, $\beta_2=0.3$ 
   
 
-cor(x1,x2) 
+cor(x1,x2)
 plot(x2~x1)
 
 
@@ -33,7 +33,7 @@ summary(lm.fit11)
 
 # g
 x1=c(x1 , 0.1)
-x2=c(x2 , 0.8)
+x2=c(x2 , 1)
 y=c(y,6)
 
 lm.fit9_g = lm(y~x1+x2)
@@ -41,7 +41,7 @@ lm.fit10_g = lm(y~x1)
 lm.fit11_g = lm(y~x2)
 
 plot(x1,x2)
-text(x=0.1, y=0.8, labels="new-obs", pos=4, cex=.7, col="blue")
+text(x=0.1, y=1, labels="observação_nova", pos=4, cex=.7, col="red")
 
 par(mfrow=c(2,2))
 plot(lm.fit9_g)
