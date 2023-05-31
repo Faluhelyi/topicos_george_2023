@@ -9,11 +9,13 @@ library(ggplot2)
 library(zoo)
 library(forecast)
 
+## Item 1, 2 e 3
 start <- Sys.time()
 
-RMSEP <- c()
+RMSEP_1 <- c()
 c = 1
 predicao = matrix(0, 120, 4)
+n_PC = matrix(0, 120, 4)
 for (j in c(0.7, 0.8, 0.9, 0.95)) {
   predicao_e = vector(length = 120)
   for (i in 1:120) {
@@ -48,6 +50,7 @@ for (j in c(0.7, 0.8, 0.9, 0.95)) {
     
     # max. de var explicada pelas CPs
     s = sum(cumsum(var_explained) <= j)
+    n_PC[i, c] = s
     
     covariaveis <- as.matrix(colunas) %*%
       as.matrix(resultado$rotation[,c(1:s)])
@@ -61,23 +64,119 @@ for (j in c(0.7, 0.8, 0.9, 0.95)) {
     predicao[i, c] <- predict(modelo, newdata = data.frame(novo_caso))
     predicao_e[i] <- (predict(modelo, newdata = data.frame(novo_caso)) - true_y1)**2
   }
-  RMSEP <- c(RMSEP, sqrt(mean(predicao_e)))
+  RMSEP_1 <- c(RMSEP_1, sqrt(mean(predicao_e)))
   c =c +1
 }
 
-Sys.time() - start # 2.769196 mins na BRB SEGUROS
+Sys.time() - start # 2.737376 mins na BRB SEGUROS
                    # Processador: Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz 3.10 GHz
                    # RAM instalada: 8,00 GB (utl: 7,72 GB)
 
 # > RMSEP
 #[1] 1.1386270 0.9768882 0.9811538 0.9760095
 
+# media_n_PC_por_faixa_retencao_em_X = c(3.991667, 8, 16.95, 29.05)
+
+## Item 4
+
+#
+
+
 ###############
 ### PARTE 2 ###
 ###############
+#install.packages('caret')
+library(caret)
+
+#install.packages('pls')
+library(pls)
+
+start <- Sys.time()
+
+caminho_base <- "C:/Users/u00378/Desktop/topicos_george_2023/lista5/BaseDados.xlsx"
+## Obter os nomes das abas
+abas <- excel_sheets(caminho_base)
+## Ler as abas e armazenar em uma lista
+dados_abas <- map(abas, ~read_excel(caminho_base, sheet = .x))
+## Realizar o join com base no índice (primeira coluna)
+dados_combinados <- reduce(dados_abas, left_join, by = '...1')
+## data wrangling
+dados_combinados <- data.frame(dados_combinados, row.names = dados_combinados$...1)
+dados_combinados <- dados_combinados[, -1]
+linhas_especificas <- row.names(filter(dados_combinados, abs(y1)>10))
+# Substitua os valores por NA nas linhas especificadas
+dados_combinados[linhas_especificas, ] <- replace(dados_combinados[linhas_especificas, ],
+                                                  TRUE, NA)
+# Substituir NA pelo valor observado no mês anterior
+dados_combinados <- na.locf(dados_combinados, na.rm = FALSE)
+
+Y <- dados_combinados %>% select(y1)
+
+pcr = pcr(y1~., ncomp = 29, data = dados_combinados)
+
+result = crossval(pcr, segments = 120, segment.type = 'consecutive',
+                  length.seg = 1)
+
+Sys.time() - start
+
+# 10.67219 secs na BBR SEGUROS
+
+RMSEP_2 <- c()
+for (i in c(4, 8, 17, 29)){
+  RMSEP_2 <- c(RMSEP_2, sqrt(mean((as.matrix(result$validation$pred[,,i]) - as.matrix(Y))**2)))
+}
+
+# RMSEP_1 E RMSEP_2 NÃO BATEM NA VIRGULA, POIS PARA O RMSE_1 O NÚMERO DE CPs QUE ENTRAM COMO
+# VAR. EXP. NO MODELO LINEAR VARIA PARA CADA ITERAÇÃO DENTRO DO LOOCV, JÁ NO RMSE_2 O NÚMERO
+# DE CPs QUE ENTRAM É FIXO.
 
 
+###############
+### PARTE 3 ###
+###############
+#install.packages('caret')
+library(caret)
 
+#install.packages('pls')
+library(pls)
 
+## Item 1, 2 e 3
+start <- Sys.time()
 
+caminho_base <- "C:/Users/u00378/Desktop/topicos_george_2023/lista5/BaseDados.xlsx"
+## Obter os nomes das abas
+abas <- excel_sheets(caminho_base)
+## Ler as abas e armazenar em uma lista
+dados_abas <- map(abas, ~read_excel(caminho_base, sheet = .x))
+## Realizar o join com base no índice (primeira coluna)
+dados_combinados <- reduce(dados_abas, left_join, by = '...1')
+## data wrangling
+dados_combinados <- data.frame(dados_combinados, row.names = dados_combinados$...1)
+dados_combinados <- dados_combinados[, -1]
+linhas_especificas <- row.names(filter(dados_combinados, abs(y1)>10))
+# Substitua os valores por NA nas linhas especificadas
+dados_combinados[linhas_especificas, ] <- replace(dados_combinados[linhas_especificas, ],
+                                                  TRUE, NA)
+# Substituir NA pelo valor observado no mês anterior
+dados_combinados <- na.locf(dados_combinados, na.rm = FALSE)
+
+Y <- dados_combinados %>% select(y1)
+
+plsr = plsr(y1~., data = dados_combinados, ncomp = 29)
+
+result = crossval(plsr, segments = 120, segment.type = 'consecutive',
+                  length.seg = 1)
+
+Sys.time() - start
+
+# 9.659629  secs na BBR SEGUROS
+
+RMSEP_3 <- c()
+for (i in c(4, 8, 17, 29)){
+  RMSEP_3 <- c(RMSEP_3, sqrt(mean((as.matrix(result$validation$pred[,,i]) - as.matrix(Y))**2)))
+}
+
+# n_comp = 17 SE DESTACOU COMO MELHOR
+
+## Item 4
 
