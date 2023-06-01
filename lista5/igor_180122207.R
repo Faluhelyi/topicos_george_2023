@@ -1,3 +1,62 @@
+######################
+### DATA WRANGLING ###
+######################
+library(readxl)
+library(purrr)
+library(dplyr)
+library(ggplot2)
+library(zoo)
+library(forecast)
+
+caminho_base <- "C:/Users/u00378/Desktop/topicos_george_2023/lista5/BaseDados.xlsx"
+## Obter os nomes das abas
+abas <- excel_sheets(caminho_base)
+## Ler as abas e armazenar em uma lista
+dados_abas <- map(abas, ~read_excel(caminho_base, sheet = .x))
+## Realizar o join com base no índice (primeira coluna)
+dados_combinados <- reduce(dados_abas, left_join, by = '...1')
+## data wrangling
+dados_combinados <- data.frame(dados_combinados, row.names = dados_combinados$...1)
+dados_combinados <- dados_combinados[, -1]
+linhas_especificas <- row.names(filter(dados_combinados, abs(y1)>10))
+
+r1 = dados_combinados[,1]
+# Substitua os valores por NA nas linhas especificadas
+dados_combinados[linhas_especificas, ] <- replace(dados_combinados[linhas_especificas, ],
+                                                  TRUE, NA)
+# Substituir NA pelo valor observado no mês anterior
+dados_combinados <- na.locf(dados_combinados, na.rm = FALSE)
+
+r2 = dados_combinados[,1]
+
+# Criar um data frame de exemplo com a série temporal da variável resposta
+dados <- data.frame(Data = seq(as.Date("2013-03-01"), by = "month", length.out = 120),
+                    Resposta1 = r1, Resposta2 = r2)
+
+
+# Criar o primeiro gráfico da série temporal da variável "Resposta"
+grafico1 <- ggplot(dados, aes(x = Data, y = Resposta1)) +
+  geom_line() +
+  labs(title = "Série Temporal da Variável Resposta antes", y = "Resposta") +
+  theme_minimal()
+
+# Criar o segundo gráfico da série temporal da variável "OutraColuna"
+grafico2 <- ggplot(dados, aes(x = Data, y = Resposta2)) +
+  geom_line() +
+  labs(title = "Série Temporal da Variável Resposta depois", y = "Resposta") +
+  theme_minimal()
+
+# Criar a imagem com dois gráficos lado a lado
+imagem <- ggplot() +
+  annotation_custom(ggplotGrob(grafico1), xmin = 0, xmax = 0.5, ymin = 0, ymax = 1) +
+  annotation_custom(ggplotGrob(grafico2), xmin = 0.5, xmax = 1, ymin = 0, ymax = 1) +
+  theme_void()
+
+# Salvar a imagem como arquivo .png
+ggsave("C:/Users/u00378/Desktop/topicos_george_2023/lista5/imagem.png",
+       imagem, width = 10, height = 5, dpi = 300)
+
+
 ###############
 ### PARTE 1 ###
 ###############
@@ -72,14 +131,56 @@ Sys.time() - start # 2.737376 mins na BRB SEGUROS
                    # Processador: Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz 3.10 GHz
                    # RAM instalada: 8,00 GB (utl: 7,72 GB)
 
-# > RMSEP
+# > RMSEP_1
 #[1] 1.1386270 0.9768882 0.9811538 0.9760095
 
 # media_n_PC_por_faixa_retencao_em_X = c(3.991667, 8, 16.95, 29.05)
 
 ## Item 4
-
-#
+predicao = vector(length = 24)
+predicao_e = vector(length = 24)
+for (i in c(1:24)) {
+  caminho_base <- "C:/Users/u00378/Desktop/topicos_george_2023/lista5/BaseDados.xlsx"
+  ## Obter os nomes das abas
+  abas <- excel_sheets(caminho_base)
+  ## Ler as abas e armazenar em uma lista
+  dados_abas <- map(abas, ~read_excel(caminho_base, sheet = .x))
+  ## Realizar o join com base no índice (primeira coluna)
+  dados_combinados <- reduce(dados_abas, left_join, by = '...1')
+  ## data wrangling
+  dados_combinados <- data.frame(dados_combinados, row.names = dados_combinados$...1)
+  dados_combinados <- dados_combinados[, -1]
+  linhas_especificas <- row.names(filter(dados_combinados, abs(y1)>10))
+  # Substitua os valores por NA nas linhas especificadas
+  dados_combinados[linhas_especificas, ] <- replace(dados_combinados[linhas_especificas, ],
+                                                    TRUE, NA)
+  # Substituir NA pelo valor observado no mês anterior
+  dados_combinados <- na.locf(dados_combinados, na.rm = FALSE)
+  
+  
+  # Selecionar todas as colunas da linha retirada (LOOCV)
+  true_y1 <- dados_combinados[120-i+1, 1]
+  true_colunas <- dados_combinados[120-i+1, -1]
+  # Selecionar todas as colunas com todas as linhas exceto a LINHA retirada (LOOCV)
+  dados_combinados <- dados_combinados[c(1:(120-i)),]
+  resp <- dados_combinados %>% select(y1)
+  colunas <- dados_combinados %>% select(-y1)
+  # Executar prcomp para todas as colunas selecionadas
+  resultado <- prcomp(colunas)
+  
+  covariaveis <- as.matrix(colunas) %*%
+    as.matrix(resultado$rotation[,c(1:8)]) # usando 8 CPs
+  covariaveis <- data.frame(covariaveis)
+  newdata = data.frame(cbind(resp, covariaveis))
+  
+  modelo <- lm(y1 ~ ., data = newdata)
+  
+  novo_caso <- as.matrix(true_colunas) %*% as.matrix(resultado$rotation[,c(1:8)])
+  #Fazer a predicao da linha retirada usando o modelo ajustado
+  predicao[i] <- predict(modelo, newdata = data.frame(novo_caso))
+  predicao_e[i] <- (predict(modelo, newdata = data.frame(novo_caso)) - true_y1)**2
+}
+RMSEP_1_4 <- sqrt(mean(predicao_e))
 
 
 ###############
@@ -112,7 +213,7 @@ dados_combinados <- na.locf(dados_combinados, na.rm = FALSE)
 
 Y <- dados_combinados %>% select(y1)
 
-pcr = pcr(y1~., ncomp = 29, data = dados_combinados)
+pcr = pcr(y1~., ncomp = 29, data = dados_combinados, scale = F)
 
 result = crossval(pcr, segments = 120, segment.type = 'consecutive',
                   length.seg = 1)
